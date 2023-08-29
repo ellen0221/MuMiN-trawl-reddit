@@ -1,0 +1,3 @@
+CREATE CONSTRAINT urlConstraint IF NOT EXISTS
+FOR (n:Url)
+REQUIRE n.name IS UNIQUE

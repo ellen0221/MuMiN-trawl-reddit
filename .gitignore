@@ -152,3 +152,9 @@ lightning_logs/
 **/*.blg
 **/*.log
 **/*.out
+
+# Local data
+/data/reddit/
+/data/reviewers/
+.idea/
+/src/misinformation_classifier/*.h5

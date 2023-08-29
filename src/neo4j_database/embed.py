@@ -102,8 +102,8 @@ def embed_articles(start_from_scratch: bool = False, gpu: bool = True):
     '''
     get_query = '''
         MATCH (n:Article)
-        WHERE exists(n.summary) AND
-              NOT exists(n.embedding)
+        WHERE n.summary IS NOT NULL AND
+              n.embedding IS NULL
         RETURN n.url AS id, n.summary AS doc
         LIMIT 3
     '''
@@ -116,7 +116,7 @@ def embed_articles(start_from_scratch: bool = False, gpu: bool = True):
     '''
     total_count_query = '''
         MATCH (n:Article)
-        WHERE exists(n.summary)
+        WHERE n.summary IS NOT NULL
         RETURN count(n) AS num
     '''
     remaining_count_query = '''

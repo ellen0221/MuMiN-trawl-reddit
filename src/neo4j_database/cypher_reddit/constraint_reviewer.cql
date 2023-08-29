@@ -1,0 +1,3 @@
+CREATE CONSTRAINT reviewerConstraint IF NOT EXISTS
+FOR (n:Reviewer)
+REQUIRE n.url IS UNIQUE

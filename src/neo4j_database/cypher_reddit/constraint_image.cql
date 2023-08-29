@@ -1,0 +1,3 @@
+CREATE CONSTRAINT imageConstraint IF NOT EXISTS
+FOR (n:Image)
+REQUIRE n.url IS UNIQUE

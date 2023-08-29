@@ -41,7 +41,7 @@ def populate(start_from_scratch: bool = False,
             graph.query(f'DROP CONSTRAINT {constraint}')
 
     # Set up cypher directory
-    cypher_dir = root_dir / 'src' / 'neo4j' / 'cypher'
+    cypher_dir = root_dir / 'src' / 'neo4j_database' / 'cypher'
     constraint_paths = list(cypher_dir.glob('constraint_*.cql'))
     node_paths = list(cypher_dir.glob('node_*.cql'))
     rel_paths = list(cypher_dir.glob('rel_*.cql'))

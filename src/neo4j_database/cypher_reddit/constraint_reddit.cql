@@ -1,0 +1,3 @@
+CREATE CONSTRAINT redditConstraint IF NOT EXISTS
+FOR (n:Reddit)
+REQUIRE n.redditId IS UNIQUE
