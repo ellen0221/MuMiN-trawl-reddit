@@ -1,11 +1,9 @@
 import numpy as np
-import pandas as pd
 import gensim.downloader
 from keras.src.callbacks import EarlyStopping, ModelCheckpoint
 from torchtext.data import get_tokenizer
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.utils.class_weight import compute_class_weight
-from sklearn.linear_model import LogisticRegressionCV
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -14,11 +12,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
 from tensorflow import keras
 from keras import layers
+from keras.models import load_model
 import keras_tuner as kt
 from keras.metrics import F1Score, Precision, Recall, Accuracy
 from tqdm.auto import tqdm
 import random
 import re
+from huggingface_hub import push_to_hub_keras
 
 from src.neo4j_database.graph_reddit import GraphReddit
 import logging
@@ -27,17 +27,6 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 graph = GraphReddit()
 glove_wv = gensim.downloader.load('glove-wiki-gigaword-100')
-# glove_wv = gensim.downloader.load('glove-twitter-100')
-
-
-# glove-wiki-gigaword-50
-# glove-wiki-gigaword-100
-# glove-wiki-gigaword-200
-# glove-wiki-gigaword-300
-# glove-twitter-200
-# glove-twitter-100
-# glove-twitter-50
-# glove-twitter-25
 
 
 def embed_by_GloVe(doc: str, max_length: int = -1):
@@ -430,8 +419,10 @@ def create_CNN_baseline_model(dropout: float = 0.2, learning_rate: float = 0.001
     # Concatenate text and feature embeddings
     concat_input = keras.layers.Concatenate(axis=1)([text_maxpool1d_1, feature_dense])
     conv1d_1 = keras.layers.Conv1D(128, 5)(concat_input)  # 208, 128
-    maxpool1d_1 = keras.layers.MaxPool1D(35, padding='same')(conv1d_1)  # 6, 128
-    flatten = keras.layers.Flatten()(maxpool1d_1)  # 768
+    maxpool1d_1 = keras.layers.MaxPool1D(5, padding='same')(conv1d_1)  # 42, 128
+    conv1d_2 = keras.layers.Conv1D(128, 5)(maxpool1d_1)  # 38, 128
+    maxpool1d_2 = keras.layers.MaxPool1D(10, padding='same')(conv1d_2)  # 4, 128
+    flatten = keras.layers.Flatten()(maxpool1d_2)  # 512
     dropout_1 = keras.layers.Dropout(dropout)(flatten)
     dense_1 = keras.layers.Dense(128)(dropout_1)  # 128
     bn = keras.layers.BatchNormalization()(dense_1)
@@ -707,7 +698,7 @@ def fit_model(train_x, val_x, train_y, val_y, epochs: int = 30,
     early_stopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
 
     # define the model checkpoint callback -> this will keep on saving the model as a physical file
-    model_checkpoint = ModelCheckpoint('misinformation_detector_bs_32.h5', verbose=1, save_best_only=True)
+    model_checkpoint = ModelCheckpoint('misinformation_detector.h5', verbose=1, save_best_only=True)
 
     if tuning_mode:
         # Tuning mode
@@ -842,7 +833,7 @@ def train_model(dataset_size: str = 'large'):
     for batch_size in batch_size_list:
         result, model = fit_model(train_input, val_input, train['y'], val['y'],
                                   epochs=epochs, batch_size=batch_size, class_weights=class_weights,
-                                  tuning_mode=tuning_mode, with_context=False, dropout=dropout,
+                                  tuning_mode=tuning_mode, with_context=True, dropout=dropout,
                                   learning_rate=learning_rate)
         if tuning_mode:
             best_hp.append({'dropout': result.get('dropout'), 'lr': result.get('learning_rate')})
@@ -860,6 +851,9 @@ def train_model(dataset_size: str = 'large'):
             val_results.append(model.evaluate(val_input, val['y']))
             test_score = model.evaluate(test_input, test['y'])
             test_results.append(test_score)
+            print(test_score)
+            # Save the model
+            # model.save('./misinformation_classifier.keras')
 
     # print(f'Val results: {val_results}')
     # print(f'Best hyperparameters: {best_hp}')
@@ -871,7 +865,10 @@ def train_model(dataset_size: str = 'large'):
 
 # train_classifer_with_sentence_embedding()
 train_model('large')
-# baseline_LR()
+
+# Load local model
+# model = load_model('./misinformation_classifier.keras')
+# model.summary()
 
 
 graph.close()

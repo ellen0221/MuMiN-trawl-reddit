@@ -1,6 +1,7 @@
 import logging
 
-logging.basicConfig(level=logging.WARNING)
+# logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 logging.getLogger('urllib3.connection').setLevel(logging.CRITICAL)
 logging.getLogger('jieba').setLevel(logging.CRITICAL)
 
@@ -203,10 +204,6 @@ def dump_databse_reddit(overwrite: bool = False):
 
 
 if __name__ == '__main__':
-    # dump_database(overwrite=True)
-    # link_all()
-    # embed_all()
-    # dump_cosine_similarities()
     # fetch_facts()
     # add_predicted_verdicts()
     # fetch_reddits_from_claims()

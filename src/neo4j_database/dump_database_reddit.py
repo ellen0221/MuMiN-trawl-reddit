@@ -9,8 +9,8 @@ import numpy as np
 from typing import Dict, Union, List
 import warnings
 import zipfile
-from .graph import Graph
-from ..utils import UpdateableZipFile, root_dir
+from src.neo4j_database.graph_reddit import GraphReddit
+from src.utils import UpdateableZipFile, root_dir
 
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ def dump_database_reddit(overwrite: bool = False,
 
     # Define data types
     claim_types = dict(label='category',
-                       reviewers='O')
+                       reviewers='str')
     reddit_types = dict(reddit_id='str')
     comment_types = dict(comment_id='str')
     user_types = dict(user_id='str')
@@ -134,8 +134,7 @@ def dump_node(name: str,
             the given column into a numpy ndarray.
     '''
     # Initialise paths
-    dump_dir = Path('/data') / 'db_dump'
-    path = dump_dir / f'mumin_reddit.zip'
+    dump_dir = root_dir / 'data' / 'db_dump'
 
     # Define `node_queries`, a list of queries
     if isinstance(node_query, str):
@@ -148,7 +147,7 @@ def dump_node(name: str,
         dump_dir.mkdir()
 
     # Initialise graph database connection
-    graph = Graph()
+    graph = GraphReddit()
 
     # Get the data from the graph database, as a Pandas DataFrame object
     logger.info(f'Fetching node data on "{name}"')
@@ -181,12 +180,10 @@ def dump_node(name: str,
 
         # Save the dataframe
         logger.info(f'Fetched {len(df)} {name} nodes. Saving node data')
-        with UpdateableZipFile(path,
-                               mode='a',
-                               compression=zipfile.ZIP_DEFLATED) as zip_file:
-            buffer = io.BytesIO()
-            df.to_pickle(buffer, compression='xz', protocol=4)
-            zip_file.writestr(name, buffer.getvalue())
+        file_name = name + '_nodes'
+        path = dump_dir / f'{file_name}.zip'
+        compression_options = dict(method='zip', archive_name=f'{file_name}.csv')
+        df.to_csv(path, compression=compression_options)
 
 
 def dump_relation(name: str, relation_query: str):
@@ -211,7 +208,7 @@ def dump_relation(name: str, relation_query: str):
             `tgt`.
     '''
     # Initialise paths
-    dump_dir = Path('/data') / 'db_dump'
+    dump_dir = root_dir / 'data' / 'db_dump'
     path = dump_dir / 'mumin_reddit.zip'
 
     # Define `relation_queries`, a list of queries
@@ -225,7 +222,7 @@ def dump_relation(name: str, relation_query: str):
         dump_dir.mkdir()
 
     # Initialise graph database connection
-    graph = Graph()
+    graph = GraphReddit()
 
     # Get the data from the graph database, as a Pandas DataFrame object
     logger.info(f'Fetching relation data on "{name}"')
@@ -259,9 +256,7 @@ def dump_relation(name: str, relation_query: str):
 
         # Save the dataframe
         logger.info(f'Fetched {len(df)} {name} relation. Saving relation data')
-        with UpdateableZipFile(path,
-                               mode='a',
-                               compression=zipfile.ZIP_DEFLATED) as zip_file:
-            buffer = io.BytesIO()
-            df.to_pickle(buffer, compression='xz', protocol=4)
-            zip_file.writestr(name, buffer.getvalue())
+        file_name = name + '_relation'
+        path = dump_dir / f'{file_name}.zip'
+        compression_options = dict(method='zip', archive_name=f'{file_name}.csv')
+        df.to_csv(path, compression=compression_options)

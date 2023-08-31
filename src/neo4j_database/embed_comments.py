@@ -61,7 +61,7 @@ def embed(get_query: str,
     classifier = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base",
                           top_k=1)
 
-    # Get the total number of articles and define a progress bar
+    # Get the total number of comments and define a progress bar
     total = graph.query(total_count_query).num[0]
     pbar = tqdm(total=total, desc='Adding comment embeddings and emotion')
     num_embedded = graph.query(remaining_count_query).num[0]
